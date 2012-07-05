@@ -390,8 +390,8 @@ static int mptcp_backlog_rcv(struct sock *meta_sk, struct sk_buff *skb)
 }
 
 /* Code inspired from sk_clone() */
-void mptcp_inherit_sk(struct sock *sk, struct sock *newsk, int family,
-		      const gfp_t flags)
+static void mptcp_inherit_sk(const struct sock *sk, struct sock *newsk,
+			     int family, const gfp_t flags)
 {
 	struct sk_filter *filter;
 #ifdef CONFIG_SECURITY_NETWORK
@@ -671,7 +671,8 @@ int mptcp_alloc_mpcb(struct sock *master_sk, __u64 remote_key)
 }
 
 #if IS_ENABLED(CONFIG_IPV6)
-struct sock *mptcp_sk_clone(struct sock *sk, int family, const gfp_t priority)
+struct sock *mptcp_sk_clone(const struct sock *sk,
+			    int family, const gfp_t priority)
 {
 	struct sock *newsk;
 	struct mptcp_cb *mpcb = (struct mptcp_cb *) sk;
@@ -845,7 +846,7 @@ void mptcp_update_metasocket(struct sock *sk, struct mptcp_cb *mpcb)
 	case AF_INET6:
 		/* If the socket is v4 mapped, we continue with v4 operations */
 		if (!mptcp_v6_is_v4_mapped(sk)) {
-			ipv6_addr_copy(&mpcb->addr6[0].addr, &inet6_sk(sk)->saddr);
+			mpcb->addr6[0].addr = inet6_sk(sk)->saddr;
 			mpcb->addr6[0].id = 0;
 			mpcb->addr6[0].port = 0;
 			mpcb->addr6[0].low_prio = 0;

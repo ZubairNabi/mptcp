@@ -74,8 +74,8 @@ static void mptcp_v6_join_request(struct mptcp_cb *mpcb, struct sk_buff *skb)
 	const u8 *hash_location;
 	__u32 isn = TCP_SKB_CB(skb)->when;
 
-	ipv6_addr_copy(&saddr, &ipv6_hdr(skb)->saddr);
-	ipv6_addr_copy(&daddr, &ipv6_hdr(skb)->daddr);
+	saddr = ipv6_hdr(skb)->saddr;
+	daddr = ipv6_hdr(skb)->daddr;
 
 	req = inet6_reqsk_alloc(&tcp6_request_sock_ops);
 	if (!req)
@@ -105,8 +105,8 @@ static void mptcp_v6_join_request(struct mptcp_cb *mpcb, struct sk_buff *skb)
 	tcp_openreq_init(req, &tmp_opt, NULL, skb);
 
 	treq = inet6_rsk(req);
-	ipv6_addr_copy(&treq->loc_addr, &daddr);
-	ipv6_addr_copy(&treq->rmt_addr, &saddr);
+	treq->loc_addr = daddr;
+	treq->rmt_addr = saddr;
 
 	atomic_inc(&skb->users);
 	treq->pktopts = skb;
@@ -184,7 +184,7 @@ int mptcp_v6_add_raddress(struct multipath_options *mopt,
 			mptcp_debug("%s: updating old addr: %pI6 \
 					to addr %pI6 with id:%d\n",
 					__func__, &rem6->addr, addr, id);
-			ipv6_addr_copy(&rem6->addr, addr);
+			rem6->addr = *addr;
 			rem6->port = port;
 			mopt->list_rcvd = 1;
 			return 0;
@@ -203,7 +203,7 @@ int mptcp_v6_add_raddress(struct multipath_options *mopt,
 	rem6 = &mopt->addr6[i];
 
 	/* Address is not known yet, store it */
-	ipv6_addr_copy(&rem6->addr, addr);
+	rem6->addr = *addr;
 	rem6->port = port;
 	rem6->bitfield = 0;
 	rem6->id = id;
@@ -556,7 +556,7 @@ void mptcp_pm_addr6_event_handler(struct inet6_ifaddr *ifa, unsigned long event,
 		}
 
 		/* update this mpcb */
-		ipv6_addr_copy(&mpcb->addr6[i].addr, &ifa->addr);
+		mpcb->addr6[i].addr = ifa->addr;
 		mpcb->addr6[i].id = i + MPTCP_MAX_ADDR;
 		mpcb->loc6_bits |= (1 << i);
 		mpcb->next_v6_index = i + 1;
