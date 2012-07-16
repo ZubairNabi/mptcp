@@ -23,7 +23,6 @@
 #include <net/route.h>
 #include <net/tcp_states.h>
 #include <net/xfrm.h>
-#include <net/tcp.h>
 #include <net/mptcp.h>
 
 #ifdef INET_CSK_DEBUG
@@ -299,7 +298,6 @@ struct sock *inet_csk_accept(struct sock *sk, int flags, int *err)
 
 	newsk = reqsk_queue_get_child(&icsk->icsk_accept_queue, sk);
 	WARN_ON(newsk->sk_state == TCP_SYN_RECV);
-
 out:
 	release_sock(sk);
 	return newsk;
@@ -608,7 +606,7 @@ struct sock *inet_csk_clone_lock(const struct sock *sk,
 {
 	struct sock *newsk;
 
-	if (is_meta_sk(sk) && sk->sk_family != req->rsk_ops->family)
+	if (sk->sk_protocol == IPPROTO_TCP && tcp_sk(sk)->mpc)
 		newsk = mptcp_sk_clone(sk, req->rsk_ops->family, priority);
 	else
 		newsk = sk_clone_lock(sk, priority);
@@ -645,8 +643,6 @@ EXPORT_SYMBOL_GPL(inet_csk_clone_lock);
  */
 void inet_csk_destroy_sock(struct sock *sk)
 {
-	mptcp_del_sock(sk);
-
 	WARN_ON(sk->sk_state != TCP_CLOSE);
 	WARN_ON(!sock_flag(sk, SOCK_DEAD));
 
